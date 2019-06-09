@@ -1,18 +1,23 @@
 var express = require('express');
+var cors = require('cors')
 var router = express.Router();
 var AWS = require("aws-sdk");
 
 AWS.config.update({
-  region: "us-west-2",
-  endpoint: "http://localhost:8000"
+    region: "us-west-2",
+    endpoint: "http://localhost:8000"
 });
 
 var dynamodb = new AWS.DynamoDB();
 var docClient = new AWS.DynamoDB.DocumentClient();
 
-router.get('/', function (req, res) {
+const corsOptions = {
+    origin: 'http://localhost:3001',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+router.get('/', cors(corsOptions), function (req, res) {
     var params = {
-        TableName : "Events",
+        TableName: "Events",
         KeyConditionExpression: "userId = :userId",
         // ExpressionAttributeNames:{
         //     "#yr": "year"
@@ -21,13 +26,13 @@ router.get('/', function (req, res) {
             ":userId": parseInt(req.query.userId)
         }
     };
-    docClient.query(params, function(err, data) {
+    docClient.query(params, function (err, data) {
         if (err) {
             console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-            res.status(500).send(JSON.stringify(err, null, 2));
+            res.status(500).json(err);
         } else {
             console.log("GetItem succeeded:", JSON.stringify(data, null, 2));
-            res.status(200).send(JSON.stringify(data, null, 2));
+            res.status(200).json(data);
         }
     });
 });
@@ -41,13 +46,13 @@ router.post('/', function (req, res) {
         Item: item
     };
     console.log(params.Item);
-    docClient.put(params, function(err, data) {
+    docClient.put(params, function (err, data) {
         if (err) {
             console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
-            res.status(500).send(JSON.stringify(err, null, 2));
+            res.status(500).json(err);
         } else {
             console.log("Added item:", JSON.stringify(data, null, 2));
-            res.status(200).send(JSON.stringify(data));
+            res.status(200).json(data);
         }
     });
 });
